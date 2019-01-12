@@ -1,1 +1,1 @@
-archierobot
+Archierobot ROS package
