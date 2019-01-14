@@ -1,0 +1,8 @@
+{
+    "terminal.integrated.env.linux": {
+        "PATH": "/home/dev/.platformio/penv/bin:/home/dev/.platformio/penv:/home/dev/bin:/home/dev/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+        "PLATFORMIO_CALLER": "vscode"
+    },
+    "ros.distro": "kinetic",
+    "C_Cpp.intelliSenseEngineFallback": "Enabled"
+}
