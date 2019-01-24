@@ -1,21 +1,4 @@
 #include <Arduino.h>
-/////!!!!!!!!!!!!!!!!!!!!!!!!!!!!//////
-#define USE_USBCON // This is required for rosserial to work with Arduino DUE, comment for the other boards
-
-// Have in mind, that after defining USE_USBCON, 3 seconds delay is introduced by ArduinoHardware.h in order to allow for scetch upload: 
-// #if defined(USE_USBCON)
-//       // Startup delay as a fail-safe to upload a new sketch
-//       delay(3000); 
-// #endif
-// So, when you start the rosserial communication on Arduino DUE, You will get the following error at least once:
-
-// [ERROR] [1498484524.793356]: Unable to sync with device; possible link problem or link 
-// software version mismatch such as hydro rosserial_python with groovy Arduino
-
-// Actually, despite of what the error message says, in this case it means just "Timeout":
-// rosserial/SerialClient.py (found at https://github.com/ros-drivers/rosser... ) line 432, 
-// it appears that the given Error is simply indicative of sync timing out. 
-// After the 3 seconds delay passes, it should connect and work as expected.
 
 #include "ros.h"
 #include "ros/time.h"
@@ -28,7 +11,8 @@
 #include "trajectory_msgs/JointTrajectory.h"
 #include "trajectory_msgs/JointTrajectoryPoint.h"
 
-#define USE_IMU // Comment if no IMU is attached !!!!!!! Uncomment  if IMU is attached
+
+//#define USE_IMU // Comment if no IMU is attached !!!!!!! Uncomment  if IMU is attached
 #define IMU_TOPIC_NAME "raw_imu" // You can change the IMU publishing topic name here
                                           // if there are more than one IMU's on the robot
                                           // for example: "raw_imu/left_leg"
@@ -63,10 +47,10 @@ void PrintFloats(int jointsCount, float *values);
 //////////// DO NOT FORGET TO CHANGE THE SERIAL (RING) BUFFER SIZE IN platformio.ini ACCORDINGLY///////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ros::NodeHandle_<ArduinoHardware, 2, 1, 1024, 1024> nh;
-// ros::NodeHandle_<ArduinoHardware, 2, 1, 2048, 2048> nh;
-//ros::NodeHandle_<ArduinoHardware, 2, 1, 4096, 4096> nh;
-//ros::NodeHandle_<ArduinoHardware, 2, 1, 8192, 8192> nh; 
+//ros::NodeHandle_<ArduinoHardware, 3, 3, 2048, 2048> nh;
+//ros::NodeHandle_<ArduinoHardware, 3, 3, 4096, 4096> nh;
+//ros::NodeHandle_<ArduinoHardware, 1, 1, 8192, 8192> nh; 
+ros::NodeHandle_<ArduinoHardware, 1, 1, 16384, 16384> nh; 
 
 
 
@@ -92,19 +76,25 @@ long int pubNumberCounter = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////CHANGE NUMBER OF PUBLISHED DUMMY JOINTS AND POINTS HERE:
-const int numberOfJoints = 6;
-const int maxPoints = 1;
+const int numberOfJoints = 12;
+const int maxPoints = 5;
 /////////////////////////////////////////////////////////////////////
 
+
+//char jNames[12][20] = {"HeapYawLeft", "HeapRollLeft", "HeapPitchLeft", "KneePitchLeft", "AnklePitchLeft", "AncleRollLeft", "HeapYawRight", "HeapRollRight", "HeapPitchRight", "KneePitchRight", "AnklePitchRight", "AncleRollLeft"};
+// char const *jNames[12] = {"HeapYawLeft", "HeapRollLeft", "HeapPitchLeft", "KneePitchLeft", "AnklePitchLeft", "AncleRollLeft", "HeapYawRight", "HeapRollRight", "HeapPitchRight", "KneePitchRight", "AnklePitchRight", "AncleRollLeft"};
+//char *jNames[12] = {(char*)"HeapYawLeft", (char*)"HeapRollLeft", };
 // char *jNames[12] = {(char*)"HeapYawLeft", (char*)"HeapRollLeft", (char*)"HeapPitchLeft", (char*)"KneePitchLeft", (char*)"AnklePitchLeft", (char*)"AncleRollLeft", (char*)"HeapYawRight", (char*)"HeapRollRight", (char*)"HeapPitchRight", (char*)"KneePitchRight", (char*)"AnklePitchRight", (char*)"AncleRollLeft"};
 char *jNames[12] = {(char*)"j0", (char*)"j1", (char*)"j2", (char*)"j3", (char*)"j4", (char*)"j5", (char*)"j6", (char*)"j7", (char*)"j8", (char*)"j9", (char*)"j10", (char*)"j11"};
+// char *jNames[12] = {"j0", "j1", "j2", "j3", "j4", "j5", "j6", "j7", "j8", "j9", "j10", "j11"};
+
 ////////////////////////////////////
 
 trajectory_msgs::JointTrajectoryPoint pointsArray[maxPoints];
 
 
 void setup() {
-    
+
     //INIT THE ROS NODE
     nh.initNode();
 
@@ -112,12 +102,10 @@ void setup() {
     // nh.getHardware()->setBaud(256000);   // Loses sync once in a while at this speed (with regular long USB cable). 
                                             // You can test with high performance cable, if there is a need to go with this speed...
 
-    nh.getHardware()->setBaud(57000); // Best serial performance at this speed
+    nh.getHardware()->setBaud(115200); // Best serial performance at this speed
     // In the ROS terminal use:
-    // rosrun rosserial_python serial_node.py _port:=/dev/ttyACM0 _baud:=57000
-    // to start the communication with the Arduino Due
-
-    // nh.getHardware()->setBaud(115200); // While testing Arduino Due was not able to connect at this speed!
+    // rosrun rosserial_python serial_node.py _port:=/dev/ttyACM0 _baud:=115200
+    // to start the communication with the teensy 3.6
 
     // SUBSCRIBE THE SUBSCRIBER
     nh.subscribe(jointTraj_sub);
@@ -254,9 +242,9 @@ void publishFeedbackJoint()
     // BECAUSE OF TE ARDUINO SPECIFICS DESCRIBED HERE: http://wiki.ros.org/rosserial/Overview/Limitations
     // THE ROSSERIAL ARDUINO SIDE HAS FEW MORE FIELDS IN THE MESSAGE
     // FIND THE ARDUINO SIDE MESSAGE DESCRIPTIONS HERE:
-    // /home/..YOUR_USER_NAME../archie_ws/src/archierobot/arduino_due/firmware/ardu_due_leg_firmware/lib/ros_lib/trajectory_msgs/JointTrajectory.h
+    // /home/..YOUR_USER_NAME../archie_ws/src/archierobot/teensy36/firmware/lib/ros_lib/trajectory_msgs/JointTrajectory.h
     // AND THE POINTS MESSAGE (THERE IS AN ARRAY OF POINTS INSIDE THE JointTrajectory MESSAGE) HERE: 
-    // /home/..YOUR_USER_NAME../archie_ws/src/archierobot/arduino_due/firmware/ardu_due_leg_firmware/lib/ros_lib/trajectory_msgs/JointTrajectoryPoint.h
+    // /home/..YOUR_USER_NAME../archie_ws/src/archierobot/teensy36/firmware/lib/ros_lib/trajectory_msgs/JointTrajectoryPoint.h
 
     trajectory_msgs::JointTrajectoryPoint point;
 
@@ -315,56 +303,56 @@ int setValuesToPoint(trajectory_msgs::JointTrajectory* trajectoire, int pointNum
 
 void jointTrajectoryCallback(const trajectory_msgs::JointTrajectory& jt)
 {
-    // nh.loginfo("Entered callback!");
+    nh.loginfo("Entered callback!");
 
-        char buffer[128];
+//         char buffer[128];
 
-    nh.loginfo("header:");
-    sprintf(buffer, "\tseq: %lu", jt.header.seq);
-    nh.loginfo(buffer);
-    nh.loginfo("\tstamp:");
-    sprintf(buffer,"\t\tsecs: %f", jt.header.stamp.toSec());
-    nh.loginfo(buffer);
-    // nh.loginfo("\t\tnsecs: %lu", jt.header.stamp.toNSec());
-    sprintf(buffer,"\t\tframeId: %s", jt.header.frame_id);
-    nh.loginfo(buffer);
+//     nh.loginfo("header:");
+//     sprintf(buffer, "\tseq: %lu", jt.header.seq);
+//     nh.loginfo(buffer);
+//     nh.loginfo("\tstamp:");
+//     sprintf(buffer,"\t\tsecs: %f", jt.header.stamp.toSec());
+//     nh.loginfo(buffer);
+//     // nh.loginfo("\t\tnsecs: %lu", jt.header.stamp.toNSec());
+//     sprintf(buffer,"\t\tframeId: %s", jt.header.frame_id);
+//     nh.loginfo(buffer);
 
-    for(unsigned long i = 0; i < jt.joint_names_length; i++)
-    { 
-        sprintf(buffer, "\t\t\t%s", jt.joint_names[i]);
-        nh.loginfo(jt.joint_names[i]);
+//     for(unsigned long i = 0; i < jt.joint_names_length; i++)
+//     { 
+//         sprintf(buffer, "\t\t\t%s", jt.joint_names[i]);
+//         nh.loginfo(jt.joint_names[i]);
 
-    } 
+//     } 
 
 
-    nh.loginfo("points:");
-    for(unsigned long pointIndex = 0; pointIndex < jt.points_length; pointIndex++)
-    {
+//     nh.loginfo("points:");
+//     for(unsigned long pointIndex = 0; pointIndex < jt.points_length; pointIndex++)
+//     {
 
-        nh.loginfo("positions:");
-        PrintFloats(jt.joint_names_length, jt.points[pointIndex].positions);
+//         nh.loginfo("positions:");
+//         PrintFloats(jt.joint_names_length, jt.points[pointIndex].positions);
 
-        nh.loginfo("velocities:");
-        PrintFloats(jt.joint_names_length, jt.points[pointIndex].velocities);
+//         nh.loginfo("velocities:");
+//         PrintFloats(jt.joint_names_length, jt.points[pointIndex].velocities);
 
-        nh.loginfo("accelerations:");
-        PrintFloats(jt.joint_names_length, jt.points[pointIndex].accelerations);
+//         nh.loginfo("accelerations:");
+//         PrintFloats(jt.joint_names_length, jt.points[pointIndex].accelerations);
     
-        nh.loginfo("effort:");
-        PrintFloats(jt.joint_names_length, jt.points[pointIndex].effort);
+//         nh.loginfo("effort:");
+//         PrintFloats(jt.joint_names_length, jt.points[pointIndex].effort);
 
-        nh.loginfo("\ttime from start:");
-        sprintf(buffer, "\t\tsecs: %f", jt.points[pointIndex].time_from_start.toSec());
-        nh.loginfo(buffer);
-        //Only the human radable representation in seconds exists in ros_serial Arduino    
-        // nh.loginfo("\t\tnsecs: %lu", jt.points[pointIndex].time_from_start.toNSec()); does not exist
-        ///// ATTENTION in you need the nanosecond representation you should calculate it yourself:
-                // 1 nsec. = 0.000000001 sec
-        ////// OR YOU CAN OTPUT 0 INSTEAD
-        //nh.loginfo("\t\tnsecs: 0");
+//         nh.loginfo("\ttime from start:");
+//         sprintf(buffer, "\t\tsecs: %f", jt.points[pointIndex].time_from_start.toSec());
+//         nh.loginfo(buffer);
+//         //Only the human radable representation in seconds exists in ros_serial Arduino    
+//         // nh.loginfo("\t\tnsecs: %lu", jt.points[pointIndex].time_from_start.toNSec()); does not exist
+//         ///// ATTENTION in you need the nanosecond representation you should calculate it yourself:
+//                 // 1 nsec. = 0.000000001 sec
+//         ////// OR YOU CAN OTPUT 0 INSTEAD
+//         //nh.loginfo("\t\tnsecs: 0");
       
         
- }
+//  }
 
 }
 
