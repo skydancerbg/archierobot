@@ -1,0 +1,20 @@
+
+This is how, to manually publish a JointTrajectory message to the desired topic.
+
+Do not forget: there should be roscore running in another terminal!
+
+Change the data values in the square brackets [,,,] to suit your test:
+
+
+PUBLISH JointTrajectory MESSAGE WITH ONE Joint AND ONE Point ON control/jointTrajectory TOPIC
+In the terminal paste:
+
+rostopic pub /control/jointTrajectory trajectory_msgs/JointTrajectory '{joint_names: ["j0"], points: [{positions:[1.0], velocities:[1.0], accelerations:[1.0], effort:[1.0], time_from_start: [3.0,0]}]}' -1
+
+
+
+PUBLISH JointTrajectory MESSAGE WITH THREE Joints AND ONE Point ON control/jointTrajectory TOPIC
+In the terminal paste:
+
+rostopic pub /control/jointTrajectory trajectory_msgs/JointTrajectory '{joint_names: ["j0","j1","j2"], points: [{positions:[1.0,2.0,3.0], velocities:[4.0,5.0,6.0,], accelerations:[7.0,8.0,9.0], effort:[1.0,2.0,3.0], time_from_start: [3.0,0]}]}' -1
+

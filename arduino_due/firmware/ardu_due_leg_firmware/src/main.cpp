@@ -19,14 +19,16 @@
 
 #include "ros.h"
 #include "ros/time.h"
-// make the nessesary changes if any in:  /home/..YOUR_USER_NAME../archie_ws/src/archierobot/teensy36/firmware/lib/config/firmware_config.h
+// make the nessesary changes if any in:  /home/..YOUR_USER_NAME../archie_ws/src/archierobot/arduino_due/firmware/ardu_due_leg_firmware/lib/config/firmware_config.h
 #include "firmware_config.h"
 //header files for the INU message and the IMU
-#include "archie_msgs/Imu.h" //// location:  /home/..YOUR_USER_NAME../archie_ws/src/archierobot/teensy36/firmware/lib/ros_lib/archie_msgs/
-#include "Imu.h"  //// location:  /home/..YOUR_USER_NAME../archie_ws/src/archierobot/teensy36/firmware/lib/imu/
+#include "archie_msgs/Imu.h" //// location:  /home/..YOUR_USER_NAME../archie_ws/src/archierobot/arduino_due/firmware/ardu_due_leg_firmware/lib/ros_lib/archie_msgs/
+#include "Imu.h"  //// location:  /home/..YOUR_USER_NAME../archie_ws/src/archierobot/arduino_due/firmware/ardu_due_leg_firmware/lib/imu/
 // message header files
 #include "trajectory_msgs/JointTrajectory.h"
 #include "trajectory_msgs/JointTrajectoryPoint.h"
+
+//#define USE_LED_BUILTIN // Uncomment to use the built in LED for debbuging!!! Comment for removing the LED for debbuging code at compile time
 
 #define USE_IMU // Comment if no IMU is attached !!!!!!! Uncomment  if IMU is attached
 #define IMU_TOPIC_NAME "raw_imu" // You can change the IMU publishing topic name here
@@ -57,17 +59,36 @@ void publishFeedbackJoint();
 int setValuesToPoint(trajectory_msgs::JointTrajectory* trajectoire, int pointNumber, int jointNumber, float val);
 void PrintFloats(int jointsCount, float *values);
 
-/////////////////////////CHANGE PUB/SUB BUFFER SIZES HERE BASED ON THE EXPECTED MESSAGE SIZE //////////////////////////
+///////////////////////// CHANGE PUB/SUB BUFFER SIZES HERE, BASED ON THE EXPECTED MESSAGE SIZE /////////////////////////
+/////////////////////////////// http://wiki.ros.org/rosserial/Overview/Initialization /////////////////////////////////
+///////////////////////////////////////////////  THE DEFAULT IS:  /////////////////////////////////////////////////////  
 // ros::NodeHandle_<HardwareType, MAX_PUBLISHERS=25, MAX_SUBSCRIBERS=25, IN_BUFFER_SIZE=512, OUT_BUFFER_SIZE=512> nh;//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////// DO NOT FORGET TO CHANGE THE SERIAL (RING) BUFFER SIZE IN platformio.ini ACCORDINGLY///////////////////////
+// AFTER A LOT OF TESTING I'VE FOUND OUT THAT SOMEHOW THE PLACES OF MAX_PUBLISHERS AND MAX_SUBSCRIBERS AT THE ABOVE
+// ARE SWAPPED FOR ARDUINO DUE ?????
+// FIRST POSITION SETS THE NUMBER OF SUBSCRIBERS INSTEAD OF PUBLISHERS AND THE SECOND POSITION SETS THE NUMBER OF 
+// PUBLISHERS INSTEAD OF SUBSCRIBERS ?????
+//
+// SO, YOU HAVE TO FIRST SET THE MAX_SUBSCRIBERS NUMBER IN THE FIRST POSITION AND THE MAX_PUBLISHERS NUMBER AT THE SECOND POSITIONS TO MAKE IT WORK!!!!!
+// ON ARDUINO DUE IT LOOKS LIKE:
+//   ros::NodeHandle_<HardwareType, MAX_SUBSCRIBERS, MAX_PUBLISHERS, IN_BUFFER_SIZE, OUT_BUFFER_SIZE> nh;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ros::NodeHandle_<ArduinoHardware, 2, 1, 1024, 1024> nh;
-// ros::NodeHandle_<ArduinoHardware, 2, 1, 2048, 2048> nh;
-//ros::NodeHandle_<ArduinoHardware, 2, 1, 4096, 4096> nh;
-//ros::NodeHandle_<ArduinoHardware, 2, 1, 8192, 8192> nh; 
+// ros::NodeHandle_<ArduinoHardware, 1, 2, 1024, 1024> nh;
+// ros::NodeHandle_<ArduinoHardware, 1, 2, 2048, 2048> nh;
+//ros::NodeHandle_<ArduinoHardware, 1, 2, 4096, 4096> nh;
+ros::NodeHandle_<ArduinoHardware,   1, 2, 8192, 8192> nh; 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////// YOU CAN CHANGE THE SERIAL (RING) BUFFER SIZE IN platformio.ini ///////////////////////
+///////////  LIKE THIS:
+// [env:due]
+// platform = atmelsam
+// board = due
+// framework = arduino
+// build_flags = -D SERIAL_RX_BUFFER_SIZE=4096
+// build_flags = -D SERIAL_TX_BUFFER_SIZE=4096
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////// ROS TOPIC PUBLISHERS ///////////////////////////////////
@@ -105,6 +126,10 @@ trajectory_msgs::JointTrajectoryPoint pointsArray[maxPoints];
 
 void setup() {
     
+    #if defined (USE_LED_BUILTIN) 
+        pinMode(LED_BUILTIN, OUTPUT);
+    #endif
+
     //INIT THE ROS NODE
     nh.initNode();
 
@@ -144,6 +169,7 @@ void setup() {
     // USE THE "BLINK WITHOUT DELAY" EXAMPLE CONCEPT OR TIMERS INSTEAD !!!!
     // WITH THIS DELAY WE GIVE SOME TIME FOR MAKING THE ROSSERIAL CONNECTION    
     delay(1);
+
     ///////////////////////////////////////////////////
 
     for (int pointIndex = 0; pointIndex < maxPoints; pointIndex++)
@@ -204,8 +230,6 @@ void loop() {
 
 /////////// feedbackJoint PUBLISHING /////////////////////////////////////////////////
 
-    nh.spinOnce(); // PROCESS INCOMMING MESSAGES
-
       //this block publishes the feedbackJoint data based on defined publish rate
     if ((millis() - prev_feedbackJoint_time) >= (1000 / FEEDBACKJOINT_PUBLISH_RATE))
     {
@@ -215,6 +239,8 @@ void loop() {
 		pubNumberCounter++;
         prev_feedbackJoint_time = millis();
     }
+
+    nh.spinOnce(); // PROCESS INCOMMING MESSAGES
 
 }
 ///////////END loop /////////////////////////////////
@@ -309,13 +335,17 @@ int setValuesToPoint(trajectory_msgs::JointTrajectory* trajectoire, int pointNum
 
 
 
-///////// ROS SUBSCRIBERS: ///////////////////////////////////////////////////////////////////////
-
-///////// JOINT TRAJECTORY SUBSCRIBER //////////////////////////
+///////// ROS SUBSCRIBERS:     ////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+///////// JOINT TRAJECTORY SUBSCRIBER        //////////////////////////
 
 void jointTrajectoryCallback(const trajectory_msgs::JointTrajectory& jt)
 {
-    // nh.loginfo("Entered callback!");
+    #if defined (USE_LED_BUILTIN) 
+    digitalWrite(LED_BUILTIN, HIGH-digitalRead(LED_BUILTIN));   // blink the LED
+    #endif
+
+    // nh.loginfo("In callback!!!");
 
         char buffer[128];
 
