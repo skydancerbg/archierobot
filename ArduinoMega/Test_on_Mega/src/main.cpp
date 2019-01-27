@@ -53,7 +53,7 @@ void setup() {
 ////////////////////////loop //////////////////////////////
 void loop() {
     
-    nh.spinOnce(); //TODO Call spinOnce with the rate required to keep the connection alive, not so fast
+    nh.spinOnce(); 
 
 }
 ///////////END -loop- /////////////////////////////////

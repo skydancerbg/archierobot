@@ -113,7 +113,7 @@ long int pubNumberCounter = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////CHANGE NUMBER OF PUBLISHED DUMMY JOINTS AND POINTS HERE:
-const int numberOfJoints = 6;
+const int numberOfJoints = 1;
 const int maxPoints = 1;
 /////////////////////////////////////////////////////////////////////
 
@@ -134,15 +134,13 @@ void setup() {
     nh.initNode();
 
     // ESTABLISH HE SERIAL CONNECTION
-    // nh.getHardware()->setBaud(256000);   // Loses sync once in a while at this speed (with regular long USB cable). 
-                                            // You can test with high performance cable, if there is a need to go with this speed...
-
+    // nh.getHardware()->setBaud(115200); // While testing, Arduino Due was not able to connect at this speed!
     nh.getHardware()->setBaud(57000); // Best serial performance at this speed
     // In the ROS terminal use:
     // rosrun rosserial_python serial_node.py _port:=/dev/ttyACM0 _baud:=57000
     // to start the communication with the Arduino Due
 
-    // nh.getHardware()->setBaud(115200); // While testing Arduino Due was not able to connect at this speed!
+    
 
     // SUBSCRIBE THE SUBSCRIBER
     nh.subscribe(jointTraj_sub);
@@ -163,7 +161,7 @@ void setup() {
     // FOR PRINTING DIAGNOSTICS AND OTHER MESSAGES TO THE TERMINAL
     nh.loginfo("ARCHIE LEG CONTROLLER CONNECTED");
     
-    // IMPORTANT: HERE, IN THE SETUP, IS THE ONLY PLACCE IN YOUR CODE YOU ARE ALLOWED TO USE DELAY!!!
+    // IMPORTANT: HERE, IN THE SETUP, IS THE ONLY PLACE IN YOUR CODE YOU ARE ALLOWED TO USE DELAY!!!
     // WE HAVE TO CALL nh.spinOnce() IN OUR LOOP, AS OFTEN, AS POSSIBLE FOR ROSSERIAL TO PROCESS THE INCOMMING MESSAGES!
     // DELAY IS A BLOCKING FUNCTION AND WILL PREVENT nh.spinOnce() FROM BEEING CALLED IN THE DESIRED RATE!
     // USE THE "BLINK WITHOUT DELAY" EXAMPLE CONCEPT OR TIMERS INSTEAD !!!!
@@ -198,7 +196,7 @@ void loop() {
 
 /////////// IMU PUBLISHING////////////////////////////////////////////////////////////
 
-///// THE IMU PUBLISHER COMPILES CONDITIONALY, IF USE_IMU IS DEFINED ABOVE
+///// THE IMU PUBLISHER COMPILES CONDITIONALLY, IF USE_IMU IS DEFINED ABOVE
 ///// IT USES THE TOPIC NAME DEFINED ABOVE IN IMU_TOPIC_NAME
     #if defined (USE_IMU) 
 
@@ -250,7 +248,7 @@ void loop() {
 
 ///////////IMU PUBLISHER///////////////////////////////////////////
 
-///// THE IMU PUBLISHER COMPILES CONDITIONALY, IF USE_IMU IS DEFINED ABOVE
+///// THE IMU PUBLISHER COMPILES CONDITIONALLY, IF USE_IMU IS DEFINED ABOVE
 ///// IT USES THE TOPIC NAME DEFINED ABOVE IN IMU_TOPIC_NAME
 #if defined (USE_IMU) 
 void publishIMU()
@@ -274,8 +272,8 @@ void publishIMU()
 
 void publishFeedbackJoint()
 {
-    // THE ROS JOINT TRAJCTORY MESSAGE DESCRIPTION HERE: http://docs.ros.org/melodic/api/trajectory_msgs/html/msg/JointTrajectory.html
-    // IT HOLDS AN ARRAY OF PONTS, DESCRIPTION HERE: http://docs.ros.org/melodic/api/trajectory_msgs/html/msg/JointTrajectoryPoint.html
+    // THE ROS JOINT TRAJECTORY MESSAGE DESCRIPTION HERE: http://docs.ros.org/melodic/api/trajectory_msgs/html/msg/JointTrajectory.html
+    // IT HOLDS AN ARRAY OF POINTS, DESCRIPTION HERE: http://docs.ros.org/melodic/api/trajectory_msgs/html/msg/JointTrajectoryPoint.html
 
     // BECAUSE OF TE ARDUINO SPECIFICS DESCRIBED HERE: http://wiki.ros.org/rosserial/Overview/Limitations
     // THE ROSSERIAL ARDUINO SIDE HAS FEW MORE FIELDS IN THE MESSAGE
@@ -390,7 +388,7 @@ void jointTrajectoryCallback(const trajectory_msgs::JointTrajectory& jt)
         // nh.loginfo("\t\tnsecs: %lu", jt.points[pointIndex].time_from_start.toNSec()); does not exist
         ///// ATTENTION in you need the nanosecond representation you should calculate it yourself:
                 // 1 nsec. = 0.000000001 sec
-        ////// OR YOU CAN OTPUT 0 INSTEAD
+        ////// OR YOU CAN OUTPUT 0 INSTEAD
         //nh.loginfo("\t\tnsecs: 0");
       
         
