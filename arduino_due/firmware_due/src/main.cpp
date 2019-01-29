@@ -128,7 +128,7 @@ ros::NodeHandle_<ArduinoHardware,   1, 2, 8192, 8192> nh;
 ////////////// ROS TOPIC PUBLISHERS ///////////////////////////////////
 
 trajectory_msgs::JointTrajectory traj;
-ros::Publisher feedbackJoint_pub("FEEDBACKJOINT_TOPIC_NAME", &traj);
+ros::Publisher feedbackJoint_pub(FEEDBACKJOINT_TOPIC_NAME, &traj);
 
 ///// THE IMU PUBLISHER COMPILES CONDITIONALLY, IF USE_IMU IS DEFINED ABOVE
 ///// IT USES THE TOPIC NAME DEFINED ABOVE IN IMU_TOPIC_NAME
@@ -139,7 +139,7 @@ ros::Publisher raw_imu_pub(IMU_TOPIC_NAME, &raw_imu_msg);
 ///////////////////////////////////////////////////////////////////////
 
 ////////////// ROS TOPIC SUBSCRIBERS ///////////////////////////////////
-ros::Subscriber<trajectory_msgs::JointTrajectory> jointTraj_sub("JOINT_TRAJECTORY_SUBSCRIBER_TOPIC_NAME", &jointTrajectoryCallback);
+ros::Subscriber<trajectory_msgs::JointTrajectory> jointTraj_sub(JOINT_TRAJECTORY_SUBSCRIBER_TOPIC_NAME, &jointTrajectoryCallback);
 
 long int pubNumberCounter = 0;
 

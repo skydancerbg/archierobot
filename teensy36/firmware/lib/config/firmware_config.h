@@ -3,8 +3,8 @@
 
 //uncomment the IMU you're using
 //#define USE_GY85_IMU
-#define USE_MPU6050_IMU
+// #define USE_MPU6050_IMU
 // #define USE_MPU9150_IMU
-// #define USE_MPU9250_IMU
+#define USE_MPU9250_IMU
 
 #endif
